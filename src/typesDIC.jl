@@ -44,8 +44,8 @@ abstract type Perspective end
 struct Eulerian <: Perspective end
 struct Lapalacian <: Perspective end 
 struct DIC_Output
-    u::Polynomial 
-    v::Polynomial
+    u_frames::Vector{Polynomial}
+    v_frames::Vector{Polynomial}
     perspective::Perspective
 end
 
