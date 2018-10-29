@@ -10,7 +10,7 @@ test_dir=string(@__DIR__)
 images=map(readdir(joinpath(test_dir,"test_images"))) do image_file_name
     map(pixel->Gray(pixel),load(joinpath(test_dir,"test_images",image_file_name)))
 end
-images=images[1:3]
+#images=images[1:3]
 @polyvar x y 
 u_model=MonomialVector([x*x,y*y,x*y,x,y,1])
 v_model=MonomialVector([x*x,y*y,x*y,x,y,1])
