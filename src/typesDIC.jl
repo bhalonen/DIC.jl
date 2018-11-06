@@ -39,10 +39,12 @@ end
 struct Displacement
     u::Real
     v::Real
+end
+@enum Perspective begin
+    Eulerian
+    Lagrangian
 end 
-abstract type Perspective end 
-struct Eulerian <: Perspective end
-struct Lapalacian <: Perspective end 
+
 struct DIC_Output
     u_frames::Vector{Polynomial}
     v_frames::Vector{Polynomial}

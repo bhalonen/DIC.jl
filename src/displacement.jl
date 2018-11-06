@@ -26,7 +26,7 @@ function DIC_analysis(dic_input::DIC_Input)
         push!(v_frames,v)
         nothing
     end
-    DIC_Output(u_frames,v_frames,Lapalacian())
+    DIC_Output(u_frames,v_frames,Lagrangian)
 end
 function FuncDIC(reference_image::Matrix{T},deformed_image::Matrix{T},roi_samples::Vector{CartesianIndex{2}},dic_run_params::DIC_Run_Parameters,initial_guess_u,initial_guess_v) where T<:Gray
     size(reference_image)==size(deformed_image) || error("all input images must be the same size $(size(reference_image)) versus $(size(deformed_image))")
