@@ -5,8 +5,11 @@ using DynamicPolynomials
 using FixedPointNumbers
 using ColorTypes
 using LinearAlgebra: norm
+using Distributed
+using ProgressMeter: @showprogress
 function __init__()
     global sobol_seq = SobolSeq(2)
+
 end
 function DIC_analysis(dic_input::DIC_Input)
     length(dic_input.images)>=2 || error("must have more than 2 images")
@@ -14,19 +17,21 @@ function DIC_analysis(dic_input::DIC_Input)
     initial_guess_v=zeros(length(dic_input.dic_run_params.v_model))
     u_frames=Vector{Polynomial}()
     v_frames=Vector{Polynomial}()
-    foreach(dic_input.images[2:end]) do image
-        u,v=FuncDIC(dic_input.images[1],image,dic_input.roi,dic_input.dic_run_params,initial_guess_u,initial_guess_v)
+    roi_samples=map(idx->get_sample_point(dic_input.roi),1:dic_input.dic_run_params.dic_setting.sample_count)
+    @showprogress map(dic_input.images[2:end]) do image
+        @time u,v=FuncDIC(dic_input.images[1],image,roi_samples,dic_input.dic_run_params,initial_guess_u,initial_guess_v)
         initial_guess_u = u.a 
         initial_guess_v = v.a 
         push!(u_frames,u)
         push!(v_frames,v)
+        nothing
     end
     DIC_Output(u_frames,v_frames,Lapalacian())
 end
-function FuncDIC(reference_image::Matrix{T},deformed_image::Matrix{T},roi::Rect_ROI,dic_run_params::DIC_Run_Parameters,initial_guess_u,initial_guess_v) where T<:Gray
+function FuncDIC(reference_image::Matrix{T},deformed_image::Matrix{T},roi_samples::Vector{CartesianIndex{2}},dic_run_params::DIC_Run_Parameters,initial_guess_u,initial_guess_v) where T<:Gray
     size(reference_image)==size(deformed_image) || error("all input images must be the same size $(size(reference_image)) versus $(size(deformed_image))")
     dic_run_params.radius<5 && error("radius must be 5 or greater")
-    cost_function(polynomial_coeff) = cost_function_builder(reference_image,deformed_image,roi,dic_run_params,polynomial_coeff)
+    cost_function(polynomial_coeff) = cost_function_builder(reference_image,deformed_image,roi_samples,dic_run_params,polynomial_coeff)
     result = optimize(cost_function, cat(dims=1,initial_guess_u,initial_guess_v), NelderMead())
     u_params=Optim.minimizer(result)[1:length(initial_guess_u)]
     v_params=Optim.minimizer(result)[length(initial_guess_u)+1:end]
@@ -45,12 +50,12 @@ function get_transformed_point(u::Polynomial,v::Polynomial,test_point::Cartesian
     y_point = max(radius+1, min(size_image[2]-radius-1, test_point[2] + Int(floor(y_translation))))
     return CartesianIndex(x_point, y_point)
 end 
-function cost_function_builder(reference_image::Matrix{T},deformed_image::Matrix{T},roi::Rect_ROI,dic_run_params::DIC_Run_Parameters, polynomial_coeff::Vector) where T<:Gray
+function cost_function_builder(reference_image::Matrix{T},deformed_image::Matrix{T},roi_samples::Vector{CartesianIndex{2}},dic_run_params::DIC_Run_Parameters, polynomial_coeff::Vector) where T<:Gray
     u = Polynomial(polynomial_coeff[1:length(dic_run_params.u_model)],dic_run_params.u_model)
     v = Polynomial(polynomial_coeff[length(dic_run_params.u_model)+1:end],dic_run_params.v_model)
     # parallelize here
-    sum(1:dic_run_params.dic_setting.sample_count) do idx
-        test_point = get_sample_point(roi)
+    @distributed (+) for idx =1:length(roi_samples)
+        test_point = roi_samples[idx]
         compare_point = get_transformed_point(u,v,test_point, size(reference_image), dic_run_params.radius)
         orb_similarity(reference_image,deformed_image,test_point,compare_point,dic_run_params.radius*2)
     end

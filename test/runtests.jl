@@ -1,4 +1,6 @@
-using DIC
+using Distributed
+addprocs(6)
+@everywhere using DIC
 using Images
 using FileIO
 using ImageView
@@ -15,7 +17,7 @@ end
 u_model=MonomialVector([x*x,y*y,x*y,x,y,1])
 v_model=MonomialVector([x*x,y*y,x*y,x,y,1])
 roi=Rect_ROI(Point(150,50),Point(200,100))
-dic_run_params=DIC_Run_Parameters(1,Square(),10 ,DIC_Setting(30), u_model, v_model)
+dic_run_params=DIC_Run_Parameters(1,Square(),5 ,DIC_Setting(30), u_model, v_model)
 
 @show result = DIC_analysis(DIC_Input(images, roi, dic_run_params))
 
