@@ -4,8 +4,8 @@ This package is a functional approach to DIC, where a polynomial can be fit to a
 
 To run, download julia, run add `add https://github.com/bhalonen/DIC.jl.git`.
 
-Then `test DIC` will run the tests.
+Then, in the julia REPL in package mode run `test DIC` will run the tests.
 
 To develop run `dev --local https://github.com/bhalonen/DIC.jl.git`.
 
-Then run `julia --project` in the cloned directory. Run `instantiate` then `test`.
+Then run `julia --project` in the cloned directory. In package mode run `instantiate` then `test`.
