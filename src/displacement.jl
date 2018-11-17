@@ -1,12 +1,4 @@
-using Optim
-using Sobol
-using ImageFeatures, Images
-using DynamicPolynomials
-using FixedPointNumbers
-using ColorTypes
-using LinearAlgebra: norm
-using Distributed
-using ProgressMeter: @showprogress
+
 function __init__()
     global sobol_seq = SobolSeq(2)
 

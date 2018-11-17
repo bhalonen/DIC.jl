@@ -1,9 +1,19 @@
 module DIC
 using DynamicPolynomials
+using Optim
+using Sobol
+using ImageFeatures, Images
+using DynamicPolynomials
+using FixedPointNumbers
+using ColorTypes
+using LinearAlgebra: norm
+using Distributed
+using ProgressMeter: @showprogress
 
 include("typesDIC.jl")
 include("utils.jl")
 include("displacement.jl")
+include("visualize.jl")
 
 
 export roi_contains, DIC_Types
@@ -26,5 +36,6 @@ export Point,
         Perspective,
         Eulerian,
         DIC_Output,
-        DIC_analysis
+        DIC_analysis,
+        make_heat_map
 end # module
