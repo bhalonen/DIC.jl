@@ -1,33 +1,6 @@
 
 function __init__()
     global sobol_seq = SobolSeq(2)
-
-end
-function DIC_analysis(dic_input::DIC_Input)
-    length(dic_input.images)>=2 || error("must have more than 2 images")
-    initial_guess_u=zeros(length(dic_input.dic_run_params.u_model))
-    initial_guess_v=zeros(length(dic_input.dic_run_params.v_model))
-    u_frames=Vector{Polynomial}()
-    v_frames=Vector{Polynomial}()
-    roi_samples=map(idx->get_sample_point(dic_input.roi),1:dic_input.dic_run_params.dic_setting.sample_count)
-    @showprogress map(dic_input.images[2:end]) do image
-        @time u,v=FuncDIC(dic_input.images[1],image,roi_samples,dic_input.dic_run_params,initial_guess_u,initial_guess_v)
-        initial_guess_u = u.a 
-        initial_guess_v = v.a 
-        push!(u_frames,u)
-        push!(v_frames,v)
-        nothing
-    end
-    DIC_Output(u_frames,v_frames,Lagrangian)
-end
-function FuncDIC(reference_image::Matrix{T},deformed_image::Matrix{T},roi_samples::Vector{CartesianIndex{2}},dic_run_params::DIC_Run_Parameters,initial_guess_u,initial_guess_v) where T<:Gray
-    size(reference_image)==size(deformed_image) || error("all input images must be the same size $(size(reference_image)) versus $(size(deformed_image))")
-    dic_run_params.radius<5 && error("radius must be 5 or greater")
-    cost_function(polynomial_coeff) = cost_function_builder(reference_image,deformed_image,roi_samples,dic_run_params,polynomial_coeff)
-    result = optimize(cost_function, cat(dims=1,initial_guess_u,initial_guess_v), NelderMead())
-    u_params=Optim.minimizer(result)[1:length(initial_guess_u)]
-    v_params=Optim.minimizer(result)[length(initial_guess_u)+1:end]
-    Polynomial(u_params,dic_run_params.u_model),Polynomial(v_params,dic_run_params.v_model)
 end
 function get_sample_point(roi::Rect_ROI)
     sample = next!(sobol_seq)
@@ -35,30 +8,55 @@ function get_sample_point(roi::Rect_ROI)
     y = roi.corner1.y + Int(floor(sample[2]*(roi.corner2.y-roi.corner1.y)))
     return CartesianIndex(x,y)
 end
-function get_transformed_point(u::Polynomial,v::Polynomial,test_point::CartesianIndex,size_image::Tuple, radius::Int)
-    x_translation = u(test_point[1], test_point[2])
-    y_translation = v(test_point[1], test_point[2])
-    x_point = max(radius+1, min(size_image[1]-radius-1, test_point[1] + Int(floor(x_translation))))
-    y_point = max(radius+1, min(size_image[2]-radius-1, test_point[2] + Int(floor(y_translation))))
-    return CartesianIndex(x_point, y_point)
-end 
-function cost_function_builder(reference_image::Matrix{T},deformed_image::Matrix{T},roi_samples::Vector{CartesianIndex{2}},dic_run_params::DIC_Run_Parameters, polynomial_coeff::Vector) where T<:Gray
+function DIC_analysis(dic_input::DIC_Input)
+    reference_image = dic_input.images[1]
+    deformed_images = dic_input.images[2:end]
+    initial_guess_u=zeros(length(dic_input.dic_run_params.u_model))
+    initial_guess_v=zeros(length(dic_input.dic_run_params.v_model))
+    size(reference_image)==size(deformed_images[1]) || error("all input images must be the same size $(size(reference_image)) versus $(size(deformed_image))")
+    dic_input.dic_run_params.radius<5 && error("radius must be 5 or greater")
+    roi_samples=map(1:dic_input.dic_run_params.dic_setting.sample_count) do idx
+        (Int32(idx%(length(deformed_images))+1),get_sample_point(dic_input.roi))
+    end
+    original_values = map(sample -> reference_image[sample[2][1],sample[2][2]].val,roi_samples)
+    deformed_images_plain = map(deformed_images) do image
+            map(image) do px
+                Float32(px.val)
+            end 
+        end 
+    cost_function(polynomial_coeff) = cost_function_builder(deformed_images_plain,
+                                    roi_samples,
+                                    dic_input.dic_run_params,
+                                    polynomial_coeff,
+                                    dic_input.time_table,
+                                    original_values)
+    result = optimize(cost_function, cat(dims=1,initial_guess_u,initial_guess_v), NelderMead())
+    u_params=Optim.minimizer(result)[1:length(initial_guess_u)]
+    v_params=Optim.minimizer(result)[length(initial_guess_u)+1:end]
+    DIC_Output(Polynomial(u_params,dic_input.dic_run_params.u_model),Polynomial(v_params,dic_input.dic_run_params.v_model),Lagrangian)
+end
+
+function cost_function_builder( deformed_images::Vector{Matrix{Float32}},
+                                roi_samples::Vector{Tuple{Int32,CartesianIndex{2}}},
+                                dic_run_params::DIC_Run_Parameters, 
+                                polynomial_coeff::Vector{<:Real},
+                                time_table::Vector{<:Real}, 
+                                original_values::Vector{Normed{UInt8,8}})
     u = Polynomial(polynomial_coeff[1:length(dic_run_params.u_model)],dic_run_params.u_model)
     v = Polynomial(polynomial_coeff[length(dic_run_params.u_model)+1:end],dic_run_params.v_model)
-    # parallelize here
-    @distributed (+) for idx =1:length(roi_samples)
-        test_point = roi_samples[idx]
-        compare_point = get_transformed_point(u,v,test_point, size(reference_image), dic_run_params.radius)
-        orb_similarity(reference_image,deformed_image,test_point,compare_point,dic_run_params.radius*2)
+    transformed_values = pmap(roi_samples) do sample
+        get_transformed_value(deformed_images[sample[1]],sample[2], u, v, time_table[sample[1]+1])
     end
+    1-cor(original_values,transformed_values)
 end 
-function get_sub_image(image::Matrix{T},center_point::CartesianIndex, size::Int) where T<:Gray
-    image[center_point[1]-size÷2:center_point[1]+size÷2,center_point[2]-size÷2:center_point[2]+size÷2]
+function get_transformed_point(u::Polynomial,v::Polynomial,test_point::CartesianIndex{2},size_image::Tuple, time_value::Real)
+    x_translation = u(test_point[1], test_point[2], time_value)
+    y_translation = v(test_point[1], test_point[2], time_value)
+    x_point = max(1, min(size_image[1], test_point[1] + Int(floor(x_translation))))
+    y_point = max(1, min(size_image[2], test_point[2] + Int(floor(y_translation))))
+    return CartesianIndex(x_point, y_point)
 end 
-function orb_similarity(reference_image::Matrix{T},deformed_image::Matrix{T},test_point::CartesianIndex,compare_point::CartesianIndex,size_box::Int) where T<:Gray
-    sub_img_orig = get_sub_image(reference_image,test_point,size_box)
-    sub_img_compare = get_sub_image(deformed_image,compare_point,size_box)
-    edges_orig,count_orig = imhist(lbp(sub_img_orig, lbp_rotation_invariant),40)
-    edges_compare,count_compare = imhist(lbp(sub_img_compare, lbp_rotation_invariant),edges_orig)
-    norm(count_orig-count_compare)
+function get_transformed_value(image::Matrix{Float32}, sample::CartesianIndex{2}, u::Polynomial, v::Polynomial,time_value::Real) 
+    point = get_transformed_point(u,v,sample, size(image),time_value)
+    image[point[1],point[2]]
 end
