@@ -9,6 +9,7 @@ using ColorTypes
 using LinearAlgebra: norm
 using Distributed
 using ProgressMeter: @showprogress
+using Statistics: cor
 
 include("typesDIC.jl")
 include("utils.jl")

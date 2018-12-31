@@ -29,8 +29,9 @@ struct DIC_Run_Parameters
     u_model::MonomialVector
     v_model::MonomialVector
 end 
-struct DIC_Input
+struct DIC_Input{T}
     images::Vector{Matrix}
+    time_table::Vector{T}
     roi::ROI
     dic_run_params::DIC_Run_Parameters
 end 
@@ -46,8 +47,8 @@ end
 end 
 
 struct DIC_Output
-    u_frames::Vector{Polynomial}
-    v_frames::Vector{Polynomial}
+    u_frames::Polynomial
+    v_frames::Polynomial
     perspective::Perspective
 end
 
