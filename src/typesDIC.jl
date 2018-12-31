@@ -10,44 +10,28 @@ end
 struct Image_ROI<:ROI
     map::Matrix{Bool}
 end 
-abstract type Interpolation_Type end
-struct Cubic_Keys<: Interpolation_Type end
-struct Linear <: Interpolation_Type end 
-
-abstract type Sub_Region end
-struct Circle <: Sub_Region end 
-struct Square <: Sub_Region 
-end
 struct DIC_Setting 
     sample_count::Int
 end 
 struct DIC_Run_Parameters
     scale_factor::Real
-    sub_region::Sub_Region
-    radius::Real
     dic_setting::DIC_Setting
     u_model::MonomialVector
     v_model::MonomialVector
 end 
-struct DIC_Input
+struct DIC_Input{T}
     images::Vector{Matrix}
+    time_table::Vector{T}
     roi::ROI
     dic_run_params::DIC_Run_Parameters
 end 
-
-
-struct Displacement
-    u::Real
-    v::Real
-end
 @enum Perspective begin
     Eulerian
     Lagrangian
 end 
-
 struct DIC_Output
-    u_frames::Vector{Polynomial}
-    v_frames::Vector{Polynomial}
+    u_frames::Polynomial
+    v_frames::Polynomial
     perspective::Perspective
 end
 
