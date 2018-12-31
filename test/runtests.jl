@@ -1,5 +1,5 @@
 using Distributed
-#addprocs(6)
+# addprocs(6)
 @everywhere using DIC
 using Images
 using FileIO
@@ -17,11 +17,11 @@ end
 u_model=MonomialVector([x*x*t,x*x*t*t,y*y*t,y*y*t*t,x*y*t,x*y*t*t,x*t,y*t,t,1])
 v_model=MonomialVector([x*x*t,x*x*t*t,y*y*t,y*y*t*t,x*y*t,x*y*t*t,x*t,y*t,t,1])
 roi=Rect_ROI(Point(150,50),Point(200,100))
-dic_run_params=DIC_Run_Parameters(1,Square(),5 ,DIC_Setting(600), u_model, v_model)
+dic_run_params=DIC_Run_Parameters(1,DIC_Setting(600), u_model, v_model)
 time_table = collect(0:(length(images)-1))
 @show result = DIC_analysis(DIC_Input{Float32}(images, time_table, roi,  dic_run_params))
 #uncomment to see plots
-imshow(make_heat_map(images[2],result.u_frames, roi, 2.0))
+imshow(make_heat_map(images[2],result.v_frames, roi, 2.0))
 
 # mapped_roi = Matrix{Bool}(undef,size(images)...)
 
