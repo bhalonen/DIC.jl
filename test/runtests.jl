@@ -1,5 +1,5 @@
 using Distributed
-#addprocs(6)
+# addprocs(6)
 @everywhere using DIC
 using Images
 using FileIO
@@ -12,13 +12,12 @@ test_dir=string(@__DIR__)
 images=map(readdir(joinpath(test_dir,"test_images"))) do image_file_name
     map(pixel->Gray(pixel),load(joinpath(test_dir,"test_images",image_file_name)))
 end
-println(images[1]|>size)
-#images=images[1:3]
+# images=images[1:3]
 @polyvar x y t
 u_model=MonomialVector([x*x*t,x*x*t*t,y*y*t,y*y*t*t,x*y*t,x*y*t*t,x*t,y*t,t,1])
 v_model=MonomialVector([x*x*t,x*x*t*t,y*y*t,y*y*t*t,x*y*t,x*y*t*t,x*t,y*t,t,1])
 roi=Rect_ROI(Point(150,50),Point(200,100))
-dic_run_params=DIC_Run_Parameters(1,DIC_Setting(600), u_model, v_model)
+dic_run_params=DIC_Run_Parameters(1,DIC_Setting(200), u_model, v_model)
 time_table = collect(0:(length(images)-1))
 @show result = DIC_analysis(DIC_Input{Float32}(images, time_table, roi,  dic_run_params))
 #uncomment to see plots

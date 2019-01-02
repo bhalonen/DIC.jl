@@ -23,7 +23,7 @@ function make_heat_map(image::Matrix{T}, polynomial::Polynomial,roi::Rect_ROI, t
     x_range = roi.corner1.x:roi.corner2.x
     y_range = roi.corner1.y:roi.corner2.y
 
-    @show min_val,max_val = get_extrema(polynomial,roi,time_frame)
+    min_val,max_val = get_extrema(polynomial,roi,time_frame)
     for idxX in x_range, idxY in y_range
         color_image[idxX,idxY]=weighted_color_mean(.5,color_image[idxX,idxY],get_color(color_range,min_val,max_val, polynomial(idxX,idxY,time_frame)) )
     end
@@ -36,7 +36,7 @@ function make_heat_map(image::Matrix{T}, polynomial::Polynomial, time_frame::Rea
     x_range = roi.corner1.x:roi.corner2.x
     y_range = roi.corner1.y:roi.corner2.y
 
-    @show min_val,max_val = get_extrema(polynomial,roi,time_frame)
+    min_val,max_val = get_extrema(polynomial,roi,time_frame)
     for idxX in x_range, idxY in y_range
         new_position = position_bounded_to_image(position(idxX, idxY, time_frame, result)..., size(image))
         new_indexes = (x=Int(round(new_position.x)), y=Int(round(new_position.y)))
