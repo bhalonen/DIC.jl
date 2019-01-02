@@ -4,7 +4,7 @@ function get_color(color_range, maximum::Real, minimum::Real, value::Real)
     percentile = (value-minimum)/(maximum-minimum)
     return color_range[Int64(floor(percentile * (length(color_range)-1) )) + 1]
 end
-function get_extrema(polynomial::Polynomial,roi::Rect_ROI,time_frame::Float32)
+function get_extrema(polynomial::Polynomial,roi::Rect_ROI,time_frame::Real)
     x_range = roi.corner1.x:roi.corner2.x
     y_range = roi.corner1.y:roi.corner2.y
     values = Vector{Float64}()
@@ -13,7 +13,7 @@ function get_extrema(polynomial::Polynomial,roi::Rect_ROI,time_frame::Float32)
     end
     extrema(values)
 end
-function make_heat_map(image::Matrix{T}, polynomial::Polynomial,roi::Rect_ROI, time_frame::Float32) where T<:Gray
+function make_heat_map(image::Matrix{T}, polynomial::Polynomial,roi::Rect_ROI, time_frame::Real) where T<:Gray
     green = colorant"green"
     red = colorant"red"
     color_range = range(green,red)

@@ -10,6 +10,7 @@ using LinearAlgebra: norm
 using Distributed
 using ProgressMeter: @showprogress
 using Statistics: cor
+using Interpolations
 
 include("typesDIC.jl")
 include("utils.jl")
