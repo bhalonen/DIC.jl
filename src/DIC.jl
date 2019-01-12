@@ -11,6 +11,7 @@ using Distributed
 using ProgressMeter: @showprogress
 using Statistics: cor
 using Interpolations
+using Dierckx
 
 include("typesDIC.jl")
 include("utils.jl")
