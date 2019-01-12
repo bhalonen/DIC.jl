@@ -29,11 +29,10 @@ end
     Eulerian
     Lagrangian
 end 
-struct DIC_Output
+struct DIC_Output{T}
     u_transform::Polynomial
     v_transform::Polynomial
     roi::ROI
-    perspective::Perspective
 end
 function displacement(x::Real, y::Real, t::Real, result::DIC_Output)
     (Δx = result.u_transform(x, y ,t), Δy = result.v_transform(x, y ,t)) 

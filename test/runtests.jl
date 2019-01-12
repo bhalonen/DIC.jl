@@ -21,7 +21,9 @@ dic_run_params=DIC_Run_Parameters(1,DIC_Setting(200), u_model, v_model)
 time_table = collect(0:(length(images)-1))
 @show result = DIC_analysis(DIC_Input{Float32}(images, time_table, roi,  dic_run_params))
 #uncomment to see plots
-imshow(make_heat_map(images[2],result.v_transform, roi, 2.0))
+eulerian_result = DIC_Output{Eulerian}(result.u_transform, result.v_transform, result.roi)
+imshow(make_heat_map(images[2],result.v_transform, time_table[2], result))
+imshow(make_heat_map(images[2],result.v_transform, time_table[2], eulerian_result))
 
 # mapped_roi = Matrix{Bool}(undef,size(images)...)
 
