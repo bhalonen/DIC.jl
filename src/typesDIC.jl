@@ -1,6 +1,6 @@
 struct Point
-    x::Int32
-    y::Int32
+    x::Real
+    y::Real
 end 
 abstract type ROI end
 struct Rect_ROI<:ROI
@@ -37,10 +37,21 @@ end
 function displacement(x::Real, y::Real, t::Real, result::DIC_Output)
     (Δx = result.u_transform(x, y ,t), Δy = result.v_transform(x, y ,t)) 
 end 
+
 function position(x::Real, y::Real, t::Real, result::DIC_Output)
     transfrom = displacement(x,y,t,result)
-    return (x = x + transfrom.Δx, y = y + transfrom.Δy)
+    return Point( x + transfrom.Δx, y + transfrom.Δy)
 end 
+function in_roi(x::Real,y::Real, t::Real, result::DIC_Output{Lagrangian})
+    in_roi(x, y, result)
+end
+function in_roi(x::Real, y::Real, result::DIC_Output{Lagrangian})
+    roi_contains(result.roi, Point(x,y))
+end
+function in_roi(x::Real,y::Real, t::Real, result::DIC_Output{Eulerian})
+    roi_contains(result.roi, position(x, y, t, result))
+end
+
 function position_bounded_to_image(x_position::Real, y_position::Real, size_image::Tuple)
     x_point = max(1,min(x_position, size_image[1]))
     y_point = max(1,min(y_position, size_image[2]))
