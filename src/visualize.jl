@@ -39,14 +39,6 @@ function make_heat_map(image::Matrix{T}, polynomial::Polynomial, time_frame::Rea
     ]
     return color_image
 end
-# will be replaced by reverse transform.
-function build_transformed_roi(irregular_grid, size_image)
-    roi_transformed = zeros(Bool,size_image)
-    foreach(irregular_grid) do image_coordinate
-        roi_transformed[Int(round(image_coordinate[1])),Int(round(image_coordinate[2]))] = true
-    end
-    erode(dilate(roi_transformed))
-end 
 
 function make_heat_map(image::Matrix{T}, polynomial::Polynomial, time_frame::Real, result::DIC_Output{Eulerian}) where T<:Gray
     roi = result.roi
@@ -55,12 +47,8 @@ function make_heat_map(image::Matrix{T}, polynomial::Polynomial, time_frame::Rea
     y_range = roi.corner1.y:roi.corner2.y
 
     min_val,max_val = get_extrema(polynomial,roi,time_frame)
-    irregular_grid = vec([position_bounded_to_image(position(idxX, idxY, time_frame, result)..., size(image)) for idxX in x_range, idxY in y_range ])
-    values = vec([polynomial(idxX,idxY,time_frame) for idxX in x_range, idxY in y_range ])
-    transformed_roi = build_transformed_roi(irregular_grid, size(image))
-    transformed_interp = Spline2D(map(val->val.x,irregular_grid), map(val->val.y,irregular_grid), values; kx=3, ky=3, s=length(values))
     color_image = [
-        transformed_roi[idxX,idxY] ?  weighted_color_mean(.5,RGB{N0f8}(image[idxX,idxY]),get_color(color_range,min_val,max_val, evaluate(transformed_interp,idxX,idxY))) :
+        in_roi(idxX,idxY,time_frame, result) ?  weighted_color_mean(.5,RGB{N0f8}(image[idxX,idxY]),get_color(color_range,min_val,max_val, polynomial(idxX,idxY,time_frame))) :
                                      RGB{N0f8}(image[idxX,idxY])
         for idxX in 1:size(image)[1], idxY in 1:size(image)[2]
     ]
