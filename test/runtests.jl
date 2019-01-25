@@ -1,11 +1,15 @@
 using Distributed
 # addprocs(6)
-@everywhere using DIC
+using DIC
 using Images
 using FileIO
 using ImageView
 using Colors
 using DynamicPolynomials
+using Plots 
+plotlyjs()
+
+
 
 test_dir=string(@__DIR__)
 
@@ -22,8 +26,11 @@ time_table = collect(0:(length(images)-1))
 @show result = DIC_analysis(DIC_Input{Float32}(images, time_table, roi,  dic_run_params))
 #uncomment to see plots
 eulerian_result = find_eulerian(result, time_table)
-imshow(make_heat_map(images[7],result.v_transform, time_table[7], result))
-imshow(make_heat_map(images[7],eulerian_result.v_transform, time_table[7], eulerian_result))
+plot(images[7],aspect_ratio=1, axis = false,size=(800,800))
+heat_map_exx = make_heat_map(images[7],differentiate(eulerian_result.v_transform,x), time_table[7], eulerian_result)
+heatmap!(heat_map_exy, alpha=.5, clims=extrema(filter(!isnan,heat_map_exy)), colorbar=true,colorbar_title="exx")
+# imshow(make_heat_map(images[7],result.v_transform, time_table[7], result))
+# imshow(make_heat_map(images[7],eulerian_result.v_transform, time_table[7], eulerian_result))
 
 # mapped_roi = Matrix{Bool}(undef,size(images)...)
 

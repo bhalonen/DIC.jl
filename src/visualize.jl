@@ -28,29 +28,20 @@ function make_heat_map(image::Matrix{T}, polynomial::Polynomial,roi::Rect_ROI, t
 end 
 function make_heat_map(image::Matrix{T}, polynomial::Polynomial, time_frame::Real, result::DIC_Output{Lagrangian}) where T<:Gray
     roi = result.roi
-    color_range = get_red_green_color_range()
     x_range = roi.corner1.x:roi.corner2.x
     y_range = roi.corner1.y:roi.corner2.y
 
-    min_val,max_val = get_extrema(polynomial,roi,time_frame)
-    color_image = [idxX in x_range && idxY in y_range ? weighted_color_mean(.5,RGB{N0f8}(image[idxX,idxY]),get_color(color_range,min_val,max_val, polynomial(idxX,idxY,time_frame))) :
-                        RGB{N0f8}(image[idxX,idxY])
+    heat_map = [idxX in x_range && idxY in y_range ?  polynomial(idxX,idxY,time_frame) : NaN
         for idxX in 1:size(image)[1], idxY in 1:size(image)[2]
     ]
-    return color_image
+    return heat_map
 end
 
 function make_heat_map(image::Matrix{T}, polynomial::Polynomial, time_frame::Real, result::DIC_Output{Eulerian}) where T<:Gray
-    roi = result.roi
-    color_range = get_red_green_color_range()
-    x_range = roi.corner1.x:roi.corner2.x
-    y_range = roi.corner1.y:roi.corner2.y
 
-    min_val,max_val = get_extrema(polynomial,roi,time_frame)
-    color_image = [
-        in_roi(idxX,idxY,time_frame, result) ?  weighted_color_mean(.5,RGB{N0f8}(image[idxX,idxY]),get_color(color_range,min_val,max_val, polynomial(idxX,idxY,time_frame))) :
-                                     RGB{N0f8}(image[idxX,idxY])
+    heat_map = [
+        in_roi(idxX,idxY,time_frame, result) ?  polynomial(idxX,idxY,time_frame) : NaN
         for idxX in 1:size(image)[1], idxY in 1:size(image)[2]
     ]
-    return color_image
+    return heat_map
 end
