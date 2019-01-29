@@ -7,7 +7,7 @@ using ImageView
 using Colors
 using DynamicPolynomials
 using Plots 
-plotlyjs()
+gr()
 
 
 

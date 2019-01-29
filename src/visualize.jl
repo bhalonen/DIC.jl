@@ -26,7 +26,7 @@ function make_heat_map(image::Matrix{T}, polynomial::Polynomial,roi::Rect_ROI, t
     end
     return color_image
 end 
-function make_heat_map(image::Matrix{T}, polynomial::Polynomial, time_frame::Real, result::DIC_Output{Lagrangian}) where T<:Gray
+function make_heat_map(image::Matrix{T}, polynomial::Function, time_frame::Real, result::DIC_Output{Lagrangian}) where T<:Gray
     roi = result.roi
     x_range = roi.corner1.x:roi.corner2.x
     y_range = roi.corner1.y:roi.corner2.y
@@ -37,7 +37,7 @@ function make_heat_map(image::Matrix{T}, polynomial::Polynomial, time_frame::Rea
     return heat_map
 end
 
-function make_heat_map(image::Matrix{T}, polynomial::Polynomial, time_frame::Real, result::DIC_Output{Eulerian}) where T<:Gray
+function make_heat_map(image::Matrix{T}, polynomial::Function, time_frame::Real, result::DIC_Output{Eulerian}) where T<:Gray
 
     heat_map = [
         in_roi(idxX,idxY,time_frame, result) ?  polynomial(idxX,idxY,time_frame) : NaN
