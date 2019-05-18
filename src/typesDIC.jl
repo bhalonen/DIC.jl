@@ -1,6 +1,6 @@
 struct Point
-    x::Real
     y::Real
+    x::Real
 end 
 abstract type ROI end
 struct Rect_ROI<:ROI
@@ -34,27 +34,27 @@ struct DIC_Output{T}
     v_transform::Polynomial
     roi::ROI
 end
-function displacement(x::Real, y::Real, t::Real, result::DIC_Output)
+function displacement( y::Real, x::Real, t::Real, result::DIC_Output)
     (Δx = result.u_transform(x, y ,t), Δy = result.v_transform(x, y ,t)) 
 end 
 
-function position(x::Real, y::Real, t::Real, result::DIC_Output)
-    transfrom = displacement(x,y,t,result)
-    return Point( x + transfrom.Δx, y + transfrom.Δy)
+function position( y::Real, x::Real, t::Real, result::DIC_Output)
+    transform = displacement(y, x, t, result)
+    return Point( y + transform.Δy, x + transform.Δx)
 end 
-function in_roi(x::Real,y::Real, t::Real, result::DIC_Output{Lagrangian})
-    in_roi(x, y, result)
+function in_roi(y::Real, x::Real, t::Real, result::DIC_Output{Lagrangian})
+    in_roi(y, x, result)
 end
-function in_roi(x::Real, y::Real, result::DIC_Output{Lagrangian})
-    roi_contains(result.roi, Point(x,y))
+function in_roi( y::Real, x::Real, result::DIC_Output{Lagrangian})
+    in_roi(result.roi, Point(y,x))
 end
-function in_roi(x::Real,y::Real, t::Real, result::DIC_Output{Eulerian})
-    roi_contains(result.roi, position(x, y, t, result))
+function in_roi(y::Real, x::Real, t::Real, result::DIC_Output{Eulerian})
+    in_roi(result.roi, position(y, x, t, result))
 end
 
-function position_bounded_to_image(x_position::Real, y_position::Real, size_image::Tuple)
-    x_point = max(1,min(x_position, size_image[1]))
-    y_point = max(1,min(y_position, size_image[2]))
+function position_bounded_to_image( y_position::Real, x_position::Real, size_image::Tuple)
+    x_point = max(1,min(x_position, size_image[2]))
+    y_point = max(1,min(y_position, size_image[1]))
     return (x = x_point, y = y_point)
 end 
 

@@ -7,7 +7,6 @@ using DynamicPolynomials
 using FixedPointNumbers
 using ColorTypes
 using LinearAlgebra: norm
-using Distributed
 using ProgressMeter: @showprogress
 using Interpolations
 

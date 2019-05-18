@@ -1,7 +1,7 @@
 import Base: <=
 <=(point1::Point,point2::Point) = point1.x<=point2.x && point1.y<=point2.y
 
-function roi_contains(roi::Rect_ROI,point::Point)
+function in_roi(roi::Rect_ROI,point::Point)
     roi.corner1 <= point && point <= roi.corner2
 end 
 function downscale_image(image::Matrix,scale_factor::Real)

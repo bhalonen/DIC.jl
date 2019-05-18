@@ -8,14 +8,14 @@ function find_eulerian(result::DIC_Output{Lagrangian}, time_table::Vector{<:Real
 end
 
 function back_cast(point::Point, time::Real, u_inv::Polynomial, v_inv::Polynomial)
-    return (x = point.x+u_inv(point.x,point.y, time),y = point.y+v_inv(point.x,point.y, time))
+    return (x = point.x+u_inv(point.x,point.y, time), y = point.y+v_inv(point.x,point.y, time))
 end
 
 function cost_of_inverse_function(polynomial_coeff::AbstractVector,result::DIC_Output{Lagrangian}, samples::AbstractVector{<:NamedTuple})
     u_inv = Polynomial(polynomial_coeff[1:length(result.u_transform.a)],result.u_transform.x)
     v_inv = Polynomial(polynomial_coeff[length(result.u_transform.a)+1:end],result.v_transform.x)
     sum(samples) do sample
-        resampled_point = back_cast(position(sample.point.x, sample.point.y, sample.time, result), sample.time, u_inv, v_inv)
+        resampled_point = back_cast(position(sample.point.y, sample.point.x, sample.time, result), sample.time, u_inv, v_inv)
         sqrt((sample.point.x - resampled_point.x)^2 + (sample.point.y - resampled_point.y)^2)
     end
 end

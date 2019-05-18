@@ -8,17 +8,17 @@ struct Sample
     local_area::Vector{<:Real}
 end 
 function get_local_area_samples(sample::CartesianIndex{2})
-    vec([CartesianIndex(sample[1]+idxX, sample[2]+idxY) for idxX in -3:3, idxY in -3:3])
+    vec([CartesianIndex(sample[1]+idxY, sample[2]+idxX) for idxY in -3:3, idxX in -3:3])
 end
 function get_roi_point(roi::Rect_ROI)
     sample = next!(sobol_seq)
     x = roi.corner1.x + Int(floor(sample[1]*(roi.corner2.x-roi.corner1.x)))
     y = roi.corner1.y + Int(floor(sample[2]*(roi.corner2.y-roi.corner1.y)))
-    Point(x,y)
+    Point(y,x)
 end
 function get_sample_point(roi::Rect_ROI, original_image::Matrix{<:Real}, frame::Integer)
     point = get_roi_point(roi)
-    center_sample = CartesianIndex(point.x, point.y)
+    center_sample = CartesianIndex(point.y,point.x)
     grid_samples = get_local_area_samples(center_sample)
     original_values = map(sample->original_image[sample],grid_samples)
     return Sample(center_sample, frame, grid_samples, original_values)
@@ -26,8 +26,8 @@ end
 function DIC_analysis(dic_input::DIC_Input)
     reference_image = dic_input.images[1]
     deformed_images = dic_input.images[2:end]
-    initial_guess_u = zeros(length(dic_input.dic_run_params.u_model))
-    initial_guess_v = zeros(length(dic_input.dic_run_params.v_model))
+    initial_guess_u = (rand(length(dic_input.dic_run_params.u_model)).-.5)/2000
+    initial_guess_v = (rand(length(dic_input.dic_run_params.v_model)).-.5)/2000
     original_image = map(reference_image) do px
         Float32(px.val)
     end 
@@ -59,22 +59,21 @@ function cost_function_builder( deformed_image_itps::Vector{<:AbstractInterpolat
                                 time_table::Vector{<:Real})
     u = Polynomial(polynomial_coeff[1:length(dic_run_params.u_model)],dic_run_params.u_model)
     v = Polynomial(polynomial_coeff[length(dic_run_params.u_model)+1:end],dic_run_params.v_model)
-    distance = @distributed (+) for sample in roi_samples
+    sum(roi_samples) do sample 
         get_local_distance(deformed_image_itps[sample.frame], sample, u, v, time_table[sample.frame+1])
     end
-    return distance
 end 
 function get_transformed_point(u::Polynomial,v::Polynomial,test_point::CartesianIndex{2},size_image::Tuple, time_value::Real)
-    x_translation = u(test_point[1], test_point[2], time_value)
-    y_translation = v(test_point[1], test_point[2], time_value)
-    return position_bounded_to_image(x_translation + test_point[1], y_translation + test_point[2], size_image)
+    Δx = u(test_point[2], test_point[1], time_value)
+    Δy = v(test_point[2], test_point[1], time_value)
+    return position_bounded_to_image( Δy + test_point[1], Δx + test_point[2], size_image)
 end 
 
 function get_local_distance(image_itp::AbstractInterpolation, sample::Sample, u::Polynomial, v::Polynomial, time_value::Real) 
-    transformed_values = map(sample.local_area_coords) do sample
-        point = get_transformed_point(u,v,sample, size(image_itp),time_value)
-        point.x == size(image_itp)[1] || point.y == size(image_itp)[2] && return -9999
-        image_itp(point.x,point.y)
+    transformed_values = map(sample.local_area_coords) do local_sample_point
+        point = get_transformed_point(u, v, local_sample_point, size(image_itp), time_value)
+        point.x == size(image_itp)[2] || point.y == size(image_itp)[1]|| point.x ==0 || point.y ==0 && return 99999999
+        image_itp(point.y, point.x)
     end
-    norm(transformed_values-sample.local_area)
+    norm(transformed_values - sample.local_area)
 end
