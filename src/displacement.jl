@@ -26,8 +26,8 @@ end
 function DIC_analysis(dic_input::DIC_Input)
     reference_image = dic_input.images[1]
     deformed_images = dic_input.images[2:end]
-    initial_guess_u = (rand(length(dic_input.dic_run_params.u_model)).-.5)/2000
-    initial_guess_v = (rand(length(dic_input.dic_run_params.v_model)).-.5)/2000
+    initial_guess_u = (rand(length(dic_input.dic_run_params.u_model)).-.5)/20000000000
+    initial_guess_v = (rand(length(dic_input.dic_run_params.v_model)).-.5)/20000000000
     original_image = map(reference_image) do px
         Float32(px.val)
     end 
@@ -66,13 +66,16 @@ end
 function get_transformed_point(u::Polynomial,v::Polynomial,test_point::CartesianIndex{2},size_image::Tuple, time_value::Real)
     Δx = u(test_point[2], test_point[1], time_value)
     Δy = v(test_point[2], test_point[1], time_value)
-    return position_bounded_to_image( Δy + test_point[1], Δx + test_point[2], size_image)
+    return (y= Δy + test_point[1], x = Δx + test_point[2])
 end 
 
 function get_local_distance(image_itp::AbstractInterpolation, sample::Sample, u::Polynomial, v::Polynomial, time_value::Real) 
     transformed_values = map(sample.local_area_coords) do local_sample_point
         point = get_transformed_point(u, v, local_sample_point, size(image_itp), time_value)
-        point.x == size(image_itp)[2] || point.y == size(image_itp)[1]|| point.x ==0 || point.y ==0 && return 99999999
+        point.x > size(image_itp)[2] && return 100*(point.x-size(image_itp)[2]+1)^2 #10^36*(point.x-size(image_itp)[2] +3)^2 + 1000
+        point.y > size(image_itp)[1] && return 100*(point.y-size(image_itp)[1] +1)^2 #10^36*(point.y-size(image_itp)[1] +3)^2 + 1000
+        point.x < 1 && return 100*(abs(point.x)+1)^2 #10^36*(abs(point.x)+3)^2 + 1000
+        point.y < 1 && return 100*(abs(point.x)+1)^2#10^36*(abs(point.y)+3)^2 + 1000
         image_itp(point.y, point.x)
     end
     norm(transformed_values - sample.local_area)

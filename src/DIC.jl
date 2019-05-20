@@ -15,6 +15,7 @@ include("utils.jl")
 include("displacement.jl")
 include("eulerian.jl")
 include("visualize.jl")
+include("strains.jl")
 
 export roi_contains, DIC_Types
 export Point, 
@@ -29,5 +30,7 @@ export Point,
         DIC_Output,
         DIC_analysis,
         make_heat_map,
-        find_eulerian
+        find_eulerian,
+        exx_heatmap,
+        exy_heatmap
 end # module
