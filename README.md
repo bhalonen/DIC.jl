@@ -12,6 +12,8 @@ To develop run `dev --local https://github.com/bhalonen/DIC.jl.git`.
 Then run `julia --project` in the cloned directory. In package mode run `instantiate` then `test`.
 
 ## Results
+The test case is run on a series of images taken on a sample that is being twisted in the following manner
+![stress state](images/stress_situation.png)
 Some intial results have been reached, however, this package remains a work in progress.
 ![intial image](images/exx_plot.png)
 
